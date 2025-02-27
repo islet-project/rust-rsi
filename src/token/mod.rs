@@ -339,3 +339,28 @@ impl From<ecdsa::Error> for TokenError
         Self::Ecdsa(value)
     }
 }
+
+/* Some very basic PartialEq implementation as some errors don't have PartialEq
+ * implemented themselves, hence can't derive. Only used in tests.
+ */
+impl PartialEq for TokenError
+{
+    fn eq(&self, other: &Self) -> bool
+    {
+        match (self, other) {
+            (TokenError::InvalidKey(s), TokenError::InvalidKey(e)) => s == e,
+            (TokenError::InvalidTag(s), TokenError::InvalidTag(e)) => s == e,
+            (TokenError::InvalidTokenFormat(s), TokenError::InvalidTokenFormat(e)) => s == e,
+            (TokenError::NotImplemented(s), TokenError::NotImplemented(e)) => s == e,
+            (TokenError::VerificationFailed(s), TokenError::VerificationFailed(e)) => s == e,
+            (TokenError::InvalidAlgorithm(s), TokenError::InvalidAlgorithm(e)) => s == e,
+            (TokenError::Ciborium(_s), TokenError::Ciborium(_e)) => true,
+            (TokenError::Coset(_s), TokenError::Coset(_e)) => true,
+            (TokenError::Ecdsa(_s), TokenError::Ecdsa(_e)) => true,
+            (TokenError::MissingPlatClaim(s), TokenError::MissingPlatClaim(e)) => s == e,
+            (TokenError::MissingPlatSwClaim(s), TokenError::MissingPlatSwClaim(e)) => s == e,
+            (TokenError::ClaimDataMisMatchType, TokenError::ClaimDataMisMatchType) => true,
+            (_, _) => false,
+        }
+    }
+}
