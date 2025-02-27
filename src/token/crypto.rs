@@ -1,7 +1,6 @@
-use p384::ecdsa::signature::Verifier;
-use sha2::{Sha256, Digest, Sha384, Sha512};
 use super::*;
-
+use p384::ecdsa::signature::Verifier;
+use sha2::{Digest, Sha256, Sha384, Sha512};
 
 enum SigningAlgorithm
 {
@@ -66,16 +65,16 @@ impl RustCryptoVerifier
                 let key = p256::ecdsa::VerifyingKey::from_sec1_bytes(&self.key_public_raw)?;
                 let sig = p256::ecdsa::Signature::from_slice(sig)?;
                 key.verify(data, &sig)?;
-            },
+            }
             SigningAlgorithm::ES384 => {
                 let key = p384::ecdsa::VerifyingKey::from_sec1_bytes(&self.key_public_raw)?;
                 let sig = p384::ecdsa::Signature::from_slice(sig)?;
                 key.verify(data, &sig)?;
-            },
+            }
             SigningAlgorithm::ES512 => {
                 // p521 from RustCrypto cannot do ecdsa
                 return Err(TokenError::NotImplemented("p521 ecdsa"));
-            },
+            }
         }
         Ok(())
     }
@@ -100,17 +99,17 @@ pub(crate) fn verify_digest(data: &[u8], hash: &[u8], alg: &str) -> Result<(), T
             let mut hasher = Sha256::new();
             hasher.update(data);
             hasher.finalize().to_vec()
-        },
+        }
         SigningAlgorithm::ES384 => {
             let mut hasher = Sha384::new();
             hasher.update(data);
             hasher.finalize().to_vec()
-        },
+        }
         SigningAlgorithm::ES512 => {
             let mut hasher = Sha512::new();
             hasher.update(data);
             hasher.finalize().to_vec()
-        },
+        }
     };
 
     if digest != hash {

@@ -1,7 +1,7 @@
 use super::*;
 
-
-pub struct PlatClaims {
+pub struct PlatClaims
+{
     pub challenge: Vec<u8>,
     pub verification_service: String,
     pub profile: String,
@@ -12,7 +12,8 @@ pub struct PlatClaims {
     pub hash_algo: String,
 }
 
-fn get_claim(key: u32, claims: &ClaimsMap) -> Result<ClaimData, TokenError> {
+fn get_claim(key: u32, claims: &ClaimsMap) -> Result<ClaimData, TokenError>
+{
     if claims.contains_key(&key) {
         Ok(claims[&key].data.clone())
     } else {
@@ -20,8 +21,10 @@ fn get_claim(key: u32, claims: &ClaimsMap) -> Result<ClaimData, TokenError> {
     }
 }
 
-impl PlatClaims {
-    pub fn from_raw_claims(claims: &ClaimsMap) -> Result<Self, TokenError> {
+impl PlatClaims
+{
+    pub fn from_raw_claims(claims: &ClaimsMap) -> Result<Self, TokenError>
+    {
         Ok(Self {
             challenge: get_claim(CCA_PLAT_CHALLENGE, claims)?.try_into()?,
             verification_service: get_claim(CCA_PLAT_VERIFICATION_SERVICE, claims)?.try_into()?,
@@ -35,7 +38,8 @@ impl PlatClaims {
     }
 }
 
-pub struct PlatSwComponent {
+pub struct PlatSwComponent
+{
     pub ty: String,
     pub hash_algo: String,
     pub value: Vec<u8>,
@@ -43,11 +47,10 @@ pub struct PlatSwComponent {
     pub signer_id: Vec<u8>,
 }
 
-impl PlatSwComponent {
-    pub fn from_raw_claims(
-        claims: &ClaimsMap,
-        plat_hash_algo: &String,
-    ) -> Result<Self, TokenError> {
+impl PlatSwComponent
+{
+    pub fn from_raw_claims(claims: &ClaimsMap, plat_hash_algo: &String) -> Result<Self, TokenError>
+    {
         Ok(Self {
             ty: get_claim(CCA_SW_COMP_TITLE, claims)?.try_into()?,
             hash_algo: match get_claim(CCA_SW_COMP_HASH_ALGORITHM, claims) {
@@ -62,7 +65,8 @@ impl PlatSwComponent {
 }
 
 #[derive(Debug)]
-pub struct RealmClaims {
+pub struct RealmClaims
+{
     pub challenge: Vec<u8>,
     pub personalization_value: Vec<u8>,
     pub hash_algo: String,
@@ -72,11 +76,10 @@ pub struct RealmClaims {
     pub rems: [Vec<u8>; CLAIM_COUNT_REALM_EXTENSIBLE_MEASUREMENTS],
 }
 
-impl RealmClaims {
-    pub fn from_raw_claims(
-        claims: &ClaimsMap,
-        measurement_claims: &ClaimsMap,
-    ) -> Result<Self, TokenError> {
+impl RealmClaims
+{
+    pub fn from_raw_claims(claims: &ClaimsMap, measurement_claims: &ClaimsMap) -> Result<Self, TokenError>
+    {
         let mut rems: [Vec<u8>; CLAIM_COUNT_REALM_EXTENSIBLE_MEASUREMENTS] =
             <[Vec<u8>; CLAIM_COUNT_REALM_EXTENSIBLE_MEASUREMENTS]>::default();
         for i in 0..CLAIM_COUNT_REALM_EXTENSIBLE_MEASUREMENTS {
@@ -85,8 +88,7 @@ impl RealmClaims {
 
         Ok(Self {
             challenge: get_claim(CCA_REALM_CHALLENGE, claims)?.try_into()?,
-            personalization_value: get_claim(CCA_REALM_PERSONALIZATION_VALUE, claims)?
-                .try_into()?,
+            personalization_value: get_claim(CCA_REALM_PERSONALIZATION_VALUE, claims)?.try_into()?,
             hash_algo: get_claim(CCA_REALM_HASH_ALGO_ID, claims)?.try_into()?,
             pub_key_hash_algo: get_claim(CCA_REALM_PUB_KEY_HASH_ALGO_ID, claims)?.try_into()?,
             pub_key: get_claim(CCA_REALM_PUB_KEY, claims)?.try_into()?,

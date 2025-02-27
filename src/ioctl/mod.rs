@@ -1,11 +1,10 @@
 pub(super) mod kernel;
 
-use nix::{fcntl::OFlag, libc::O_RDWR, sys::stat::Mode, errno::Errno};
+use nix::{errno::Errno, fcntl::OFlag, libc::O_RDWR, sys::stat::Mode};
 
 const FLAGS: OFlag = OFlag::from_bits_truncate(O_RDWR);
 const MODE: Mode = Mode::from_bits_truncate(0o644);
 const DEV: &str = "/dev/rsi";
-
 
 struct Fd
 {
@@ -79,7 +78,7 @@ pub fn attestation_token(challenge: &[u8; super::CHALLENGE_LEN as usize]) -> nix
             token = vec![0 as u8; attest[0].token_len as usize];
             attest[0].token = token.as_mut_ptr();
             kernel::attestation_token(fd.get(), &mut attest)?;
-        },
+        }
         Err(e) => return Err(e),
     }
     Ok(token[..(attest[0].token_len as usize)].to_vec())

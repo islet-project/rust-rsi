@@ -7,7 +7,7 @@
 
 mod internal
 {
-    use super::{RsiMeasurement, RsiAttestation, RsiSealingKey};
+    use super::{RsiAttestation, RsiMeasurement, RsiSealingKey};
 
     // TODO: These should be hex
     nix::ioctl_read!(abi_version, b'x', 190u8, u64);
@@ -17,11 +17,9 @@ mod internal
     nix::ioctl_readwrite_buf!(sealing_key, b'x', 200u8, RsiSealingKey);
 }
 
-
 pub const MAX_MEASUR_LEN: u16 = 0x40;
-pub const CHALLENGE_LEN:  u16 = 0x40;
-pub const GRANULE_LEN:  u16 = 0x1000;
-
+pub const CHALLENGE_LEN: u16 = 0x40;
+pub const GRANULE_LEN: u16 = 0x1000;
 
 // should be pub(super) but nix leaks the type through pub ioctl definitions
 #[repr(C)]
@@ -36,7 +34,11 @@ impl RsiMeasurement
 {
     pub(super) fn new_empty(index: u32) -> Self
     {
-        Self { index, data_len: 0, data: [0; MAX_MEASUR_LEN as usize] }
+        Self {
+            index,
+            data_len: 0,
+            data: [0; MAX_MEASUR_LEN as usize],
+        }
     }
 
     pub(super) fn new_from_data(index: u32, src: &[u8]) -> Self
@@ -46,7 +48,11 @@ impl RsiMeasurement
 
         let mut data = [0u8; MAX_MEASUR_LEN as usize];
         data[..src.len()].copy_from_slice(src);
-        Self { index, data_len: src.len().try_into().unwrap(), data }
+        Self {
+            index,
+            data_len: src.len().try_into().unwrap(),
+            data,
+        }
     }
 }
 
@@ -63,7 +69,11 @@ impl RsiAttestation
 {
     pub(super) fn new(src: &[u8; CHALLENGE_LEN as usize], token_len: u64) -> Self
     {
-        Self { challenge: src.clone(), token_len, token: std::ptr::null_mut() }
+        Self {
+            challenge: src.clone(),
+            token_len,
+            token: std::ptr::null_mut(),
+        }
     }
 }
 
@@ -78,14 +88,18 @@ pub struct RsiSealingKey
 {
     pub(super) flags: u64,
     pub(super) svn: u64,
-    pub(super) realm_sealing_key: [u8; 32]
+    pub(super) realm_sealing_key: [u8; 32],
 }
 
 impl RsiSealingKey
 {
     pub(super) fn new(flags: u64, svn: u64) -> Self
     {
-        Self { flags: flags & RSI_SEALING_KEY_FLAGS_MASK, svn, realm_sealing_key: [0u8; 32] }
+        Self {
+            flags: flags & RSI_SEALING_KEY_FLAGS_MASK,
+            svn,
+            realm_sealing_key: [0u8; 32],
+        }
     }
 }
 

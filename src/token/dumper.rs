@@ -1,8 +1,6 @@
 use super::*;
 
-
 const COLUMN: usize = 30;
-
 
 fn print_indent(indent: i32)
 {
@@ -24,13 +22,11 @@ fn print_claim(key: u32, claim: &Claim, indent: i32)
         }
     } else {
         let mandatory = if claim.mandatory { "mandatory " } else { "" };
-        println!("* Missing {}claim with key: {} ({})",
-                 mandatory, key, claim.title);
+        println!("* Missing {}claim with key: {} ({})", mandatory, key, claim.title);
     }
 }
 
-fn print_cose_sign1(token_type: &str,
-                    cose_sign1: &CoseSign1)
+fn print_cose_sign1(token_type: &str, cose_sign1: &CoseSign1)
 {
     println!("== {} Token cose:", token_type);
     println!("{:COLUMN$} = {:?}", "Protected header", cose_sign1.protected.header);
@@ -48,7 +44,10 @@ fn print_token_realm(claims: &RealmToken)
     for (k, v) in &claims.token_claims {
         print_claim(*k, v, 0);
     }
-    println!("{:COLUMN$} (#{})", "Realm measurements", CCA_REALM_EXTENSIBLE_MEASUREMENTS);
+    println!(
+        "{:COLUMN$} (#{})",
+        "Realm measurements", CCA_REALM_EXTENSIBLE_MEASUREMENTS
+    );
     for (k, v) in &claims.measurement_claims {
         print_claim(*k, v, 1);
     }

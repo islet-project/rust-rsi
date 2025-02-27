@@ -1,14 +1,13 @@
 pub(crate) mod crypto;
 pub(crate) mod dumper;
-pub(crate) mod verifier;
 pub(crate) mod parser;
-
+pub(crate) mod verifier;
 
 use ciborium::de;
 use coset::CoseSign1;
 use std::collections::HashMap;
-use std::fmt::Debug;
 use std::default::Default;
+use std::fmt::Debug;
 
 
 const TAG_COSE_SIGN1: u64 =                             18;
@@ -64,41 +63,49 @@ pub enum ClaimData
 #[allow(dead_code)]
 impl ClaimData
 {
-    fn new_bool() -> Self {
+    fn new_bool() -> Self
+    {
         ClaimData::Bool(false)
     }
-    fn new_int64() -> Self {
+    fn new_int64() -> Self
+    {
         ClaimData::Int64(0)
     }
-    fn new_bstr() -> Self {
+    fn new_bstr() -> Self
+    {
         ClaimData::Bstr(Vec::new())
     }
-    fn new_text() -> Self {
+    fn new_text() -> Self
+    {
         ClaimData::Text(String::new())
     }
 
-    fn get_bool(&self) -> bool {
+    fn get_bool(&self) -> bool
+    {
         if let ClaimData::Bool(b) = self {
             return *b;
         } else {
             panic!("ClaimData is not Bool");
         }
     }
-    fn get_int64(&self) -> i64 {
+    fn get_int64(&self) -> i64
+    {
         if let ClaimData::Int64(i) = self {
             return *i;
         } else {
             panic!("ClaimData is not Int64");
         }
     }
-    fn get_bstr(&self) -> &[u8] {
+    fn get_bstr(&self) -> &[u8]
+    {
         if let ClaimData::Bstr(d) = self {
             return d;
         } else {
             panic!("ClaimData is not Bstr");
         }
     }
-    fn get_text(&self) -> &str {
+    fn get_text(&self) -> &str
+    {
         if let ClaimData::Text(s) = self {
             return s;
         } else {
@@ -107,10 +114,12 @@ impl ClaimData
     }
 }
 
-impl TryInto<String> for ClaimData {
+impl TryInto<String> for ClaimData
+{
     type Error = TokenError;
 
-    fn try_into(self) -> Result<String, Self::Error> {
+    fn try_into(self) -> Result<String, Self::Error>
+    {
         if let ClaimData::Text(v) = self {
             Ok(v)
         } else {
@@ -119,10 +128,12 @@ impl TryInto<String> for ClaimData {
     }
 }
 
-impl TryInto<Vec<u8>> for ClaimData {
+impl TryInto<Vec<u8>> for ClaimData
+{
     type Error = TokenError;
 
-    fn try_into(self) -> Result<Vec<u8>, Self::Error> {
+    fn try_into(self) -> Result<Vec<u8>, Self::Error>
+    {
         if let ClaimData::Bstr(v) = self {
             Ok(v)
         } else {
@@ -131,10 +142,12 @@ impl TryInto<Vec<u8>> for ClaimData {
     }
 }
 
-impl TryInto<i64> for ClaimData {
+impl TryInto<i64> for ClaimData
+{
     type Error = TokenError;
 
-    fn try_into(self) -> Result<i64, Self::Error> {
+    fn try_into(self) -> Result<i64, Self::Error>
+    {
         if let ClaimData::Int64(v) = self {
             Ok(v)
         } else {
@@ -214,7 +227,10 @@ impl RealmToken
 
         let mut count = 0;
         loop {
-            token.measurement_claims.insert(count, Claim::new(true, ClaimData::new_bstr(), "Realm extensible measurement", false));
+            token.measurement_claims.insert(
+                count,
+                Claim::new(true, ClaimData::new_bstr(), "Realm extensible measurement", false),
+            );
             count += 1;
             if count as usize == CLAIM_COUNT_REALM_EXTENSIBLE_MEASUREMENTS {
                 break;
@@ -266,7 +282,10 @@ impl AttestationClaims
 {
     fn new(realm_claims: RealmToken, platform_claims: PlatformToken) -> Self
     {
-        Self { realm_claims, platform_claims }
+        Self {
+            realm_claims,
+            platform_claims,
+        }
     }
 }
 
@@ -299,21 +318,24 @@ impl std::error::Error for TokenError {}
 
 impl From<de::Error<std::io::Error>> for TokenError
 {
-    fn from(value: de::Error<std::io::Error>) -> Self {
+    fn from(value: de::Error<std::io::Error>) -> Self
+    {
         Self::Ciborium(value)
     }
 }
 
 impl From<coset::CoseError> for TokenError
 {
-    fn from(value: coset::CoseError) -> Self {
+    fn from(value: coset::CoseError) -> Self
+    {
         Self::Coset(value)
     }
 }
 
 impl From<ecdsa::Error> for TokenError
 {
-    fn from(value: ecdsa::Error) -> Self {
+    fn from(value: ecdsa::Error) -> Self
+    {
         Self::Ecdsa(value)
     }
 }

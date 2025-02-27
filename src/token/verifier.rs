@@ -1,7 +1,6 @@
+use super::*;
 use ciborium::{de, value::Value};
 use coset::{AsCborValue, CoseSign1};
-use super::*;
-
 
 fn unpack_i64(val: &Value) -> Result<i64, TokenError>
 {
@@ -84,8 +83,7 @@ fn find_claim(claims: &mut ClaimsMap, key: u32) -> Option<&mut Claim>
     None
 }
 
-fn get_claims_from_map(map: Vec<(Value, Value)>, claims: &mut ClaimsMap)
-                       -> Result<Vec<(Value, Value)>, TokenError>
+fn get_claims_from_map(map: Vec<(Value, Value)>, claims: &mut ClaimsMap) -> Result<Vec<(Value, Value)>, TokenError>
 {
     let mut unknown = Vec::<(Value, Value)>::new();
 
@@ -105,7 +103,10 @@ fn get_claims_from_map(map: Vec<(Value, Value)>, claims: &mut ClaimsMap)
 
 fn unpack_token_realm(token: &mut RealmToken) -> Result<(), TokenError>
 {
-    let realm_payload = token.cose_sign1.payload.as_ref()
+    let realm_payload = token
+        .cose_sign1
+        .payload
+        .as_ref()
         .ok_or(TokenError::InvalidTokenFormat("payload empty"))?;
     let val = de::from_reader(&realm_payload[..])?;
     let map = unpack_map(val, "realm token not a map")?;
@@ -135,7 +136,10 @@ fn unpack_token_realm(token: &mut RealmToken) -> Result<(), TokenError>
 
 fn unpack_token_platform(token: &mut PlatformToken) -> Result<(), TokenError>
 {
-    let platform_payload = token.cose_sign1.payload.as_ref()
+    let platform_payload = token
+        .cose_sign1
+        .payload
+        .as_ref()
         .ok_or(TokenError::InvalidTokenFormat("payload empty"))?;
     let val = de::from_reader(&platform_payload[..])?;
     let map = unpack_map(val, "platform token not a map")?;
@@ -156,15 +160,15 @@ fn unpack_token_platform(token: &mut PlatformToken) -> Result<(), TokenError>
     }
 
     // zip components (Value) and claims (SwComponent) to easily iterate together
-    let sw_components_zipped = sw_components
-        .into_iter()
-        .zip(&mut token.sw_component_claims);
+    let sw_components_zipped = sw_components.into_iter().zip(&mut token.sw_component_claims);
 
     for (sw_comp, sw_comp_claim) in sw_components_zipped {
         let map = unpack_map(sw_comp, "sw component not a map")?;
         let rest = get_claims_from_map(map, &mut sw_comp_claim.claims)?;
         if rest.len() != 0 {
-            return Err(TokenError::InvalidTokenFormat("sw component contains unrecognized claims"));
+            return Err(TokenError::InvalidTokenFormat(
+                "sw component contains unrecognized claims",
+            ));
         }
         sw_comp_claim.present = true;
     }
