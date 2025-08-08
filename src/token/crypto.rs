@@ -117,21 +117,30 @@ pub(crate) fn cose_key_to_sec1(key: &[u8]) -> Result<Vec<u8>, TokenError>
 
     let key = match (alg, x, y) {
         (Some(IANA_EC2_CURVE_P256), Some(x), Some(y)) => {
-            let x_bytes: &GenericArray<_, U32> = GenericArray::from_slice(&x);
-            let y_bytes: &GenericArray<_, U32> = GenericArray::from_slice(&y);
-            let ep = EncodedPoint::<NistP256>::from_affine_coordinates(x_bytes, y_bytes, false);
+            if x.len() != 32 || y.len() != 32 {
+                return Err(TokenError::InvalidTokenFormat("Wrong x/y length of P256 curve"));
+            }
+            let x_array = GenericArray::<_, U32>::from_slice(&x);
+            let y_array = GenericArray::<_, U32>::from_slice(&y);
+            let ep = EncodedPoint::<NistP256>::from_affine_coordinates(x_array, y_array, false);
             ep.as_bytes().to_vec()
         },
         (Some(IANA_EC2_CURVE_P384), Some(x), Some(y)) => {
-            let x_bytes: &GenericArray<_, U48> = GenericArray::from_slice(&x);
-            let y_bytes: &GenericArray<_, U48> = GenericArray::from_slice(&y);
-            let ep = EncodedPoint::<NistP384>::from_affine_coordinates(x_bytes, y_bytes, false);
+            if x.len() != 48 || y.len() != 48 {
+                return Err(TokenError::InvalidTokenFormat("Wrong x/y length of P384 curve"));
+            }
+            let x_array = GenericArray::<_, U48>::from_slice(&x);
+            let y_array = GenericArray::<_, U48>::from_slice(&y);
+            let ep = EncodedPoint::<NistP384>::from_affine_coordinates(x_array, y_array, false);
             ep.as_bytes().to_vec()
         },
         (Some(IANA_EC2_CURVE_P521), Some(x), Some(y)) => {
-            let x_bytes: &GenericArray<_, U66> = GenericArray::from_slice(&x);
-            let y_bytes: &GenericArray<_, U66> = GenericArray::from_slice(&y);
-            let ep = EncodedPoint::<NistP521>::from_affine_coordinates(x_bytes, y_bytes, false);
+            if x.len() != 66 || y.len() != 66 {
+                return Err(TokenError::InvalidTokenFormat("Wrong x/y length of P521 curve"));
+            }
+            let x_array = GenericArray::<_, U66>::from_slice(&x);
+            let y_array = GenericArray::<_, U66>::from_slice(&y);
+            let ep = EncodedPoint::<NistP521>::from_affine_coordinates(x_array, y_array, false);
             ep.as_bytes().to_vec()
         },
         _ => return Err(TokenError::InvalidTokenFormat("Wrong realm public key format")),
