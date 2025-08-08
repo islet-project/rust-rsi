@@ -61,6 +61,10 @@ fn unpack_keyed_bytes(tupple: (Value, Value), id: u32, err: &'static str) -> Res
 
 fn get_claim(val: Value, claim: &mut Claim) -> Result<(), TokenError>
 {
+    if claim.present {
+        return Err(TokenError::InvalidTokenFormat("duplicate claim"));
+    }
+
     match (val, &claim.data) {
         (Value::Bool(b),        ClaimData::Bool(_))  => claim.data = ClaimData::Bool(b),
         (i @ Value::Integer(_), ClaimData::Int64(_)) => claim.data = ClaimData::Int64(unpack_i64(&i)?),
@@ -204,13 +208,26 @@ fn unpack_cca_token(buf: &[u8]) -> Result<(Vec<u8>, Vec<u8>), TokenError>
     Ok((platform, realm))
 }
 
-fn verify_token_realm(buf: &[u8]) -> Result<RealmToken, TokenError>
+fn verify_token_realm(buf: &[u8], platform_profile: &str) -> Result<RealmToken, TokenError>
 {
     let mut token = RealmToken::new();
 
     verify_token_sign1(buf, &mut token.cose_sign1)?;
 
     unpack_token_realm(&mut token)?;
+
+    let profile_claim = &token.token_claims[&CCA_REALM_PROFILE];
+    // For the compatibility with other code that uses this lib convert this back to sec1.
+    // Not sure this check is according to spec, it's said that when realm profile
+    // is not present platform profile should be used.
+    if (profile_claim.present && profile_claim.data.get_text() == CCA_REALM_PROFILE_VALUE_1_0) ||
+        (!profile_claim.present && platform_profile == CCA_PLAT_PROFILE_VALUE_1_0)
+    {
+        if let Some(pub_key_claim) = token.token_claims.get_mut(&CCA_REALM_PUB_KEY) {
+            let sec1 = crypto::cose_key_to_sec1(pub_key_claim.data.get_bstr())?;
+            pub_key_claim.data = ClaimData::Bstr(sec1);
+        }
+    }
 
     let realm_key = token.token_claims[&CCA_REALM_PUB_KEY].data.get_bstr();
     crypto::verify_coset_signature(&token.cose_sign1, realm_key, b"")?;
@@ -237,8 +254,9 @@ pub fn verify_token(buf: &[u8], cpak_pub: Option<&[u8]>) -> Result<AttestationCl
 {
     let (platform_token, realm_token) = unpack_cca_token(buf)?;
 
-    let realm_token = verify_token_realm(&realm_token)?;
     let platform_token = verify_token_platform(&platform_token, cpak_pub)?;
+    let platform_profile = platform_token.token_claims[&CCA_PLAT_PROFILE].data.get_text();
+    let realm_token = verify_token_realm(&realm_token, &platform_profile)?;
 
     // verify crypto bind between realm and platform token
     let dak_pub = realm_token.token_claims[&CCA_REALM_PUB_KEY].data.get_bstr();

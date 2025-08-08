@@ -29,6 +29,7 @@ const CCA_PLAT_HASH_ALGO_ID: u32 =                    2402;
 
 /* CCA Realm Delegated Attestation Token */
 const CCA_REALM_CHALLENGE: u32 =                        10;
+const CCA_REALM_PROFILE: u32 =                         265;
 const CCA_REALM_PERSONALIZATION_VALUE: u32 =         44235;
 const CCA_REALM_HASH_ALGO_ID: u32 =                  44236;
 const CCA_REALM_PUB_KEY: u32 =                       44237;
@@ -44,12 +45,14 @@ const CCA_SW_COMP_SIGNER_ID: u32 =                       5;
 const CCA_SW_COMP_HASH_ALGORITHM: u32 =                  6;
 
 /* Counts */
-const CLAIM_COUNT_REALM_TOKEN: usize =                   6;
+const CLAIM_COUNT_REALM_TOKEN: usize =                   7;
 const CLAIM_COUNT_PLATFORM_TOKEN: usize =                8;
 pub const CLAIM_COUNT_REALM_EXTENSIBLE_MEASUREMENTS: usize = 4;
 const CLAIM_COUNT_SW_COMPONENT: usize =                  5;
 const MAX_SW_COMPONENT_COUNT: usize =                   32;
 
+const CCA_REALM_PROFILE_VALUE_1_0: &str = "tag:arm.com,2023:realm#1.0.0";
+const CCA_PLAT_PROFILE_VALUE_1_0:&str = "tag:arm.com,2023:cca_platform#1.0.0";
 
 #[derive(Debug, Clone)]
 pub enum ClaimData
@@ -217,12 +220,13 @@ impl RealmToken
     {
         let mut token = Self::default();
 
-        token.token_claims.insert(CCA_REALM_CHALLENGE,             Claim::new(true, ClaimData::new_bstr(), "Realm challenge",               false));
-        token.token_claims.insert(CCA_REALM_PERSONALIZATION_VALUE, Claim::new(true, ClaimData::new_bstr(), "Realm personalization value",   false));
-        token.token_claims.insert(CCA_REALM_HASH_ALGO_ID,          Claim::new(true, ClaimData::new_text(), "Realm hash algo id",            false));
-        token.token_claims.insert(CCA_REALM_PUB_KEY_HASH_ALGO_ID,  Claim::new(true, ClaimData::new_text(), "Realm public key hash algo id", false));
-        token.token_claims.insert(CCA_REALM_PUB_KEY,               Claim::new(true, ClaimData::new_bstr(), "Realm signing public key",      false));
-        token.token_claims.insert(CCA_REALM_INITIAL_MEASUREMENT,   Claim::new(true, ClaimData::new_bstr(), "Realm initial measurement",     false));
+        token.token_claims.insert(CCA_REALM_CHALLENGE,             Claim::new(true,  ClaimData::new_bstr(), "Realm challenge",               false));
+        token.token_claims.insert(CCA_REALM_PROFILE,               Claim::new(false, ClaimData::new_text(), "Realm profile",                 false));
+        token.token_claims.insert(CCA_REALM_PERSONALIZATION_VALUE, Claim::new(true,  ClaimData::new_bstr(), "Realm personalization value",   false));
+        token.token_claims.insert(CCA_REALM_HASH_ALGO_ID,          Claim::new(true,  ClaimData::new_text(), "Realm hash algo id",            false));
+        token.token_claims.insert(CCA_REALM_PUB_KEY_HASH_ALGO_ID,  Claim::new(true,  ClaimData::new_text(), "Realm public key hash algo id", false));
+        token.token_claims.insert(CCA_REALM_PUB_KEY,               Claim::new(true,  ClaimData::new_bstr(), "Realm signing public key",      false));
+        token.token_claims.insert(CCA_REALM_INITIAL_MEASUREMENT,   Claim::new(true,  ClaimData::new_bstr(), "Realm initial measurement",     false));
         assert!(token.token_claims.len() == CLAIM_COUNT_REALM_TOKEN);
 
         let mut count = 0;

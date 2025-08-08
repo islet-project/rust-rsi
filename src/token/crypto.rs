@@ -1,6 +1,19 @@
 use super::*;
-use p384::ecdsa::signature::Verifier;
-use sha2::{Digest, Sha256, Sha384, Sha512};
+use ciborium::Value;
+use coset::{iana, AsCborValue, CoseKey, KeyType, Label, RegisteredLabel};
+use ecdsa::{elliptic_curve::consts::{U32, U48, U66}, signature::Verifier, EncodedPoint};
+use p256::NistP256;
+use p384::NistP384;
+use p521::NistP521;
+use sha2::{digest::generic_array::GenericArray, Digest, Sha256, Sha384, Sha512};
+
+const IANA_KEY_TYPE_EC2: KeyType = RegisteredLabel::Assigned(iana::KeyType::EC2);
+const IANA_EC2_KEY_PARAM_CRV: i64 = iana::Ec2KeyParameter::Crv as i64;
+const IANA_EC2_KEY_PARAM_X: i64 = iana::Ec2KeyParameter::X as i64;
+const IANA_EC2_KEY_PARAM_Y: i64 = iana::Ec2KeyParameter::Y as i64;
+const IANA_EC2_CURVE_P256: i128 = iana::EllipticCurve::P_256 as i128;
+const IANA_EC2_CURVE_P384: i128 = iana::EllipticCurve::P_384 as i128;
+const IANA_EC2_CURVE_P521: i128 = iana::EllipticCurve::P_521 as i128;
 
 enum SigningAlgorithm
 {
@@ -78,6 +91,52 @@ impl RustCryptoVerifier
         }
         Ok(())
     }
+}
+
+pub(crate) fn cose_key_to_sec1(key: &[u8]) -> Result<Vec<u8>, TokenError>
+{
+    let val = de::from_reader(key)?;
+    let cose_key = CoseKey::from_cbor_value(val)?;
+    if cose_key.kty != IANA_KEY_TYPE_EC2 {
+        return Err(TokenError::InvalidTokenFormat("Realm public key not EC2"));
+    }
+
+    let mut alg: Option<i128> = None;
+    let mut x: Option<Vec<u8>> = None;
+    let mut y: Option<Vec<u8>> = None;
+
+    for pair in cose_key.params {
+        match pair {
+            (Label::Int(IANA_EC2_KEY_PARAM_CRV), Value::Integer(i)) => { alg.replace(i.into()); },
+            (Label::Int(IANA_EC2_KEY_PARAM_X), Value::Bytes(x_param)) => { x.replace(x_param); },
+            (Label::Int(IANA_EC2_KEY_PARAM_Y), Value::Bytes(y_param)) => { y.replace(y_param); },
+            _ => ()   // ignore all the rest, match below will verify
+        }
+    }
+
+    let key = match (alg, x, y) {
+        (Some(IANA_EC2_CURVE_P256), Some(x), Some(y)) => {
+            let x_bytes: &GenericArray<_, U32> = GenericArray::from_slice(&x);
+            let y_bytes: &GenericArray<_, U32> = GenericArray::from_slice(&y);
+            let ep = EncodedPoint::<NistP256>::from_affine_coordinates(x_bytes, y_bytes, false);
+            ep.as_bytes().to_vec()
+        },
+        (Some(IANA_EC2_CURVE_P384), Some(x), Some(y)) => {
+            let x_bytes: &GenericArray<_, U48> = GenericArray::from_slice(&x);
+            let y_bytes: &GenericArray<_, U48> = GenericArray::from_slice(&y);
+            let ep = EncodedPoint::<NistP384>::from_affine_coordinates(x_bytes, y_bytes, false);
+            ep.as_bytes().to_vec()
+        },
+        (Some(IANA_EC2_CURVE_P521), Some(x), Some(y)) => {
+            let x_bytes: &GenericArray<_, U66> = GenericArray::from_slice(&x);
+            let y_bytes: &GenericArray<_, U66> = GenericArray::from_slice(&y);
+            let ep = EncodedPoint::<NistP521>::from_affine_coordinates(x_bytes, y_bytes, false);
+            ep.as_bytes().to_vec()
+        },
+        _ => return Err(TokenError::InvalidTokenFormat("Wrong realm public key format")),
+    };
+
+    Ok(key)
 }
 
 pub(crate) fn verify_coset_signature(cose: &CoseSign1, key_pub: &[u8], aad: &[u8]) -> Result<(), TokenError>
