@@ -192,13 +192,13 @@ pub struct Claim
 
 impl Claim
 {
-    fn new(mandatory: bool, data: ClaimData, title: &str, present: bool) -> Self
+    fn new(mandatory: bool, data: ClaimData, title: &str) -> Self
     {
         Self {
             mandatory,
             data,
             title: title.to_string(),
-            present,
+            present: false,
         }
     }
 }
@@ -234,20 +234,20 @@ impl RealmToken
     {
         let mut token = Self::default();
 
-        token.token_claims.insert(CCA_REALM_CHALLENGE,             Claim::new(true,  ClaimData::new_bstr(), "Realm challenge",               false));
-        token.token_claims.insert(CCA_REALM_PROFILE,               Claim::new(false, ClaimData::new_text(), "Realm profile",                 false));
-        token.token_claims.insert(CCA_REALM_PERSONALIZATION_VALUE, Claim::new(true,  ClaimData::new_bstr(), "Realm personalization value",   false));
-        token.token_claims.insert(CCA_REALM_HASH_ALGO_ID,          Claim::new(true,  ClaimData::new_text(), "Realm hash algo id",            false));
-        token.token_claims.insert(CCA_REALM_PUB_KEY_HASH_ALGO_ID,  Claim::new(true,  ClaimData::new_text(), "Realm public key hash algo id", false));
-        token.token_claims.insert(CCA_REALM_PUB_KEY,               Claim::new(true,  ClaimData::new_bstr(), "Realm signing public key",      false));
-        token.token_claims.insert(CCA_REALM_INITIAL_MEASUREMENT,   Claim::new(true,  ClaimData::new_bstr(), "Realm initial measurement",     false));
+        token.token_claims.insert(CCA_REALM_CHALLENGE,             Claim::new(true,  ClaimData::new_bstr(), "Realm challenge",             ));
+        token.token_claims.insert(CCA_REALM_PROFILE,               Claim::new(false, ClaimData::new_text(), "Realm profile",               ));
+        token.token_claims.insert(CCA_REALM_PERSONALIZATION_VALUE, Claim::new(true,  ClaimData::new_bstr(), "Realm personalization value", ));
+        token.token_claims.insert(CCA_REALM_HASH_ALGO_ID,          Claim::new(true,  ClaimData::new_text(), "Realm hash algo id",          ));
+        token.token_claims.insert(CCA_REALM_PUB_KEY_HASH_ALGO_ID,  Claim::new(true,  ClaimData::new_text(), "Realm public key hash algo id"));
+        token.token_claims.insert(CCA_REALM_PUB_KEY,               Claim::new(true,  ClaimData::new_bstr(), "Realm signing public key",    ));
+        token.token_claims.insert(CCA_REALM_INITIAL_MEASUREMENT,   Claim::new(true,  ClaimData::new_bstr(), "Realm initial measurement",   ));
         assert!(token.token_claims.len() == CLAIM_COUNT_REALM_TOKEN);
 
         let mut count = 0;
         loop {
             token.measurement_claims.insert(
                 count,
-                Claim::new(true, ClaimData::new_bstr(), "Realm extensible measurement", false),
+                Claim::new(true, ClaimData::new_bstr(), "Realm extensible measurement"),
             );
             count += 1;
             if count as usize == CLAIM_COUNT_REALM_EXTENSIBLE_MEASUREMENTS {
@@ -265,23 +265,23 @@ impl PlatformToken
     {
         let mut token = Self::default();
 
-        token.token_claims.insert(CCA_PLAT_CHALLENGE,            Claim::new(true,  ClaimData::new_bstr(),  "Challange",            false));
-        token.token_claims.insert(CCA_PLAT_VERIFICATION_SERVICE, Claim::new(false, ClaimData::new_text(),  "Verification service", false));
-        token.token_claims.insert(CCA_PLAT_PROFILE,              Claim::new(true,  ClaimData::new_text(),  "Profile",              false));
-        token.token_claims.insert(CCA_PLAT_INSTANCE_ID,          Claim::new(true,  ClaimData::new_bstr(),  "Instance ID",          false));
-        token.token_claims.insert(CCA_PLAT_IMPLEMENTATION_ID,    Claim::new(true,  ClaimData::new_bstr(),  "Implementation ID",    false));
-        token.token_claims.insert(CCA_PLAT_SECURITY_LIFECYCLE,   Claim::new(true,  ClaimData::new_int64(), "Lifecycle",            false));
-        token.token_claims.insert(CCA_PLAT_CONFIGURATION,        Claim::new(true,  ClaimData::new_bstr(),  "Configuration",        false));
-        token.token_claims.insert(CCA_PLAT_HASH_ALGO_ID,         Claim::new(true,  ClaimData::new_text(),  "Platform hash algo",   false));
+        token.token_claims.insert(CCA_PLAT_CHALLENGE,            Claim::new(true,  ClaimData::new_bstr(),  "Challange"           ));
+        token.token_claims.insert(CCA_PLAT_VERIFICATION_SERVICE, Claim::new(false, ClaimData::new_text(),  "Verification service"));
+        token.token_claims.insert(CCA_PLAT_PROFILE,              Claim::new(true,  ClaimData::new_text(),  "Profile"             ));
+        token.token_claims.insert(CCA_PLAT_INSTANCE_ID,          Claim::new(true,  ClaimData::new_bstr(),  "Instance ID"         ));
+        token.token_claims.insert(CCA_PLAT_IMPLEMENTATION_ID,    Claim::new(true,  ClaimData::new_bstr(),  "Implementation ID"   ));
+        token.token_claims.insert(CCA_PLAT_SECURITY_LIFECYCLE,   Claim::new(true,  ClaimData::new_int64(), "Lifecycle"           ));
+        token.token_claims.insert(CCA_PLAT_CONFIGURATION,        Claim::new(true,  ClaimData::new_bstr(),  "Configuration"       ));
+        token.token_claims.insert(CCA_PLAT_HASH_ALGO_ID,         Claim::new(true,  ClaimData::new_text(),  "Platform hash algo"  ));
         assert!(token.token_claims.len() == CLAIM_COUNT_PLATFORM_TOKEN);
 
         for component in &mut token.sw_component_claims {
             component.present = false;
-            component.claims.insert(CCA_SW_COMP_TITLE,             Claim::new(true,  ClaimData::new_text(), "SW Type",           false));
-            component.claims.insert(CCA_SW_COMP_HASH_ALGORITHM,    Claim::new(false, ClaimData::new_text(), "Hash algorithm",    false));
-            component.claims.insert(CCA_SW_COMP_MEASUREMENT_VALUE, Claim::new(true,  ClaimData::new_bstr(), "Measurement value", false));
-            component.claims.insert(CCA_SW_COMP_VERSION,           Claim::new(false, ClaimData::new_text(), "Version",           false));
-            component.claims.insert(CCA_SW_COMP_SIGNER_ID,         Claim::new(true,  ClaimData::new_bstr(), "Signer ID",         false));
+            component.claims.insert(CCA_SW_COMP_TITLE,             Claim::new(true,  ClaimData::new_text(), "SW Type"          ));
+            component.claims.insert(CCA_SW_COMP_HASH_ALGORITHM,    Claim::new(false, ClaimData::new_text(), "Hash algorithm"   ));
+            component.claims.insert(CCA_SW_COMP_MEASUREMENT_VALUE, Claim::new(true,  ClaimData::new_bstr(), "Measurement value"));
+            component.claims.insert(CCA_SW_COMP_VERSION,           Claim::new(false, ClaimData::new_text(), "Version"          ));
+            component.claims.insert(CCA_SW_COMP_SIGNER_ID,         Claim::new(true,  ClaimData::new_bstr(), "Signer ID"        ));
             assert!(component.claims.len() == CLAIM_COUNT_SW_COMPONENT);
         }
 
