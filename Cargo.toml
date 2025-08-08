@@ -21,3 +21,7 @@ sha2 = "*"
 [build-dependencies]
 cc = "*"
 bindgen = "*"
+
+[features]
+# this feature is for testing purposes only, DO NOT ENABLE otherwise
+disable-challenge = []
