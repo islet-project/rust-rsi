@@ -85,8 +85,9 @@ impl RustCryptoVerifier
                 key.verify(data, &sig)?;
             }
             SigningAlgorithm::ES512 => {
-                // p521 from RustCrypto cannot do ecdsa
-                return Err(TokenError::NotImplemented("p521 ecdsa"));
+                let key = p521::ecdsa::VerifyingKey::from_sec1_bytes(&self.key_public_raw)?;
+                let sig = p521::ecdsa::Signature::from_slice(sig)?;
+                key.verify(data, &sig)?;
             }
         }
         Ok(())
