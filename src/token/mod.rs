@@ -319,8 +319,7 @@ pub enum TokenError
     Ciborium(de::Error<std::io::Error>),
     Coset(coset::CoseError),
     Ecdsa(ecdsa::Error),
-    MissingPlatClaim(u32),
-    MissingPlatSwClaim(u32),
+    MissingMandatoryClaim(u32),
     ClaimDataMisMatchType,
 }
 
@@ -375,8 +374,7 @@ impl PartialEq for TokenError
             (TokenError::Ciborium(_s), TokenError::Ciborium(_e)) => true,
             (TokenError::Coset(_s), TokenError::Coset(_e)) => true,
             (TokenError::Ecdsa(_s), TokenError::Ecdsa(_e)) => true,
-            (TokenError::MissingPlatClaim(s), TokenError::MissingPlatClaim(e)) => s == e,
-            (TokenError::MissingPlatSwClaim(s), TokenError::MissingPlatSwClaim(e)) => s == e,
+            (TokenError::MissingMandatoryClaim(s), TokenError::MissingMandatoryClaim(e)) => s == e,
             (TokenError::ClaimDataMisMatchType, TokenError::ClaimDataMisMatchType) => true,
             (_, _) => false,
         }
