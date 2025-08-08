@@ -117,13 +117,13 @@ impl ClaimData
     }
 }
 
-impl TryInto<String> for ClaimData
+impl TryFrom<ClaimData> for String
 {
     type Error = TokenError;
 
-    fn try_into(self) -> Result<String, Self::Error>
+    fn try_from(value: ClaimData) -> Result<Self, Self::Error>
     {
-        if let ClaimData::Text(v) = self {
+        if let ClaimData::Text(v) = value {
             Ok(v)
         } else {
             Err(TokenError::ClaimDataMisMatchType)
@@ -131,13 +131,13 @@ impl TryInto<String> for ClaimData
     }
 }
 
-impl TryInto<Vec<u8>> for ClaimData
+impl TryFrom<ClaimData> for Vec<u8>
 {
     type Error = TokenError;
 
-    fn try_into(self) -> Result<Vec<u8>, Self::Error>
+    fn try_from(value: ClaimData) -> Result<Self, Self::Error>
     {
-        if let ClaimData::Bstr(v) = self {
+        if let ClaimData::Bstr(v) = value {
             Ok(v)
         } else {
             Err(TokenError::ClaimDataMisMatchType)
@@ -145,14 +145,28 @@ impl TryInto<Vec<u8>> for ClaimData
     }
 }
 
-impl TryInto<i64> for ClaimData
+impl TryFrom<ClaimData> for i64
 {
     type Error = TokenError;
 
-    fn try_into(self) -> Result<i64, Self::Error>
+    fn try_from(value: ClaimData) -> Result<Self, Self::Error>
     {
-        if let ClaimData::Int64(v) = self {
+        if let ClaimData::Int64(v) = value {
             Ok(v)
+        } else {
+            Err(TokenError::ClaimDataMisMatchType)
+        }
+    }
+}
+
+impl TryFrom<ClaimData> for bool
+{
+    type Error = TokenError;
+
+    fn try_from(value: ClaimData) -> Result<Self, Self::Error>
+    {
+        if let ClaimData::Bool(b) = value {
+            Ok(b)
         } else {
             Err(TokenError::ClaimDataMisMatchType)
         }
