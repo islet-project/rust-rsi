@@ -208,13 +208,16 @@ fn unpack_cca_token(buf: &[u8]) -> Result<(Vec<u8>, Vec<u8>), TokenError>
     Ok((platform, realm))
 }
 
-fn verify_token_realm(buf: &[u8], platform_profile: &str) -> Result<RealmToken, TokenError>
+// return token (claims) and a public_key that should be used to calculate challenge
+fn verify_token_realm(buf: &[u8], platform_profile: &str) -> Result<(RealmToken, Vec<u8>), TokenError>
 {
     let mut token = RealmToken::new();
 
     verify_token_sign1(buf, &mut token.cose_sign1)?;
 
     unpack_token_realm(&mut token)?;
+
+    let realm_key_orig = token.token_claims[&CCA_REALM_PUB_KEY].data.get_bstr().to_vec();
 
     let profile_claim = &token.token_claims[&CCA_REALM_PROFILE];
     // For the compatibility with other code that uses this lib convert this back to sec1.
@@ -232,7 +235,7 @@ fn verify_token_realm(buf: &[u8], platform_profile: &str) -> Result<RealmToken, 
     let realm_key = token.token_claims[&CCA_REALM_PUB_KEY].data.get_bstr();
     crypto::verify_coset_signature(&token.cose_sign1, realm_key, b"")?;
 
-    Ok(token)
+    Ok((token, realm_key_orig))
 }
 
 pub fn verify_token_platform(buf: &[u8], cpak_pub: Option<&[u8]>) -> Result<PlatformToken, TokenError>
@@ -256,13 +259,12 @@ pub fn verify_token(buf: &[u8], cpak_pub: Option<&[u8]>) -> Result<AttestationCl
 
     let platform_token = verify_token_platform(&platform_token, cpak_pub)?;
     let platform_profile = platform_token.token_claims[&CCA_PLAT_PROFILE].data.get_text();
-    let realm_token = verify_token_realm(&realm_token, &platform_profile)?;
+    let (realm_token, dak_pub) = verify_token_realm(&realm_token, &platform_profile)?;
 
     // verify crypto bind between realm and platform token
-    let dak_pub = realm_token.token_claims[&CCA_REALM_PUB_KEY].data.get_bstr();
     let challenge = platform_token.token_claims[&CCA_PLAT_CHALLENGE].data.get_bstr();
     let alg = realm_token.token_claims[&CCA_REALM_PUB_KEY_HASH_ALGO_ID].data.get_text();
-    crypto::verify_digest(dak_pub, challenge, alg)?;
+    crypto::verify_digest(&dak_pub, challenge, alg)?;
 
     let attest_claims = AttestationClaims::new(realm_token, platform_token);
 

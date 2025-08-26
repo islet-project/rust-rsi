@@ -220,9 +220,6 @@ pub(crate) fn verify_digest(data: &[u8], hash: &[u8], alg: &str) -> Result<(), T
         }
     };
 
-    println!("Hash: {}", hex::encode(&hash));
-    println!("Dgst: {}", hex::encode(&digest));
-
     #[cfg(not(feature = "disable-challenge"))]
     if digest != hash {
         return Err(TokenError::VerificationFailed("challenge verification failed"));
