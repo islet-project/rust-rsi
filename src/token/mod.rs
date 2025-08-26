@@ -3,7 +3,7 @@ pub(crate) mod dumper;
 pub(crate) mod parser;
 pub(crate) mod verifier;
 
-use ciborium::de;
+use ciborium::{de, ser};
 use coset::CoseSign1;
 use std::collections::HashMap;
 use std::default::Default;
@@ -317,8 +317,10 @@ pub enum TokenError
     VerificationFailed(&'static str),
     InvalidAlgorithm(Option<coset::Algorithm>),
     Ciborium(de::Error<std::io::Error>),
+    CiboriumSer(ser::Error<std::io::Error>),
     Coset(coset::CoseError),
     Ecdsa(ecdsa::Error),
+    EllipticCurve(ecdsa::elliptic_curve::Error),
     MissingMandatoryClaim(u32),
     ClaimDataMisMatchType,
 }
@@ -341,6 +343,14 @@ impl From<de::Error<std::io::Error>> for TokenError
     }
 }
 
+impl From<ser::Error<std::io::Error>> for TokenError
+{
+    fn from(value: ser::Error<std::io::Error>) -> Self
+    {
+        Self::CiboriumSer(value)
+    }
+}
+
 impl From<coset::CoseError> for TokenError
 {
     fn from(value: coset::CoseError) -> Self
@@ -354,6 +364,14 @@ impl From<ecdsa::Error> for TokenError
     fn from(value: ecdsa::Error) -> Self
     {
         Self::Ecdsa(value)
+    }
+}
+
+impl From<ecdsa::elliptic_curve::Error> for TokenError
+{
+    fn from(value: ecdsa::elliptic_curve::Error) -> Self
+    {
+        Self::EllipticCurve(value)
     }
 }
 
@@ -372,8 +390,10 @@ impl PartialEq for TokenError
             (TokenError::VerificationFailed(s), TokenError::VerificationFailed(e)) => s == e,
             (TokenError::InvalidAlgorithm(s), TokenError::InvalidAlgorithm(e)) => s == e,
             (TokenError::Ciborium(_s), TokenError::Ciborium(_e)) => true,
+            (TokenError::CiboriumSer(_s), TokenError::CiboriumSer(_e)) => true,
             (TokenError::Coset(_s), TokenError::Coset(_e)) => true,
             (TokenError::Ecdsa(_s), TokenError::Ecdsa(_e)) => true,
+            (TokenError::EllipticCurve(s), TokenError::EllipticCurve(e)) => s == e,
             (TokenError::MissingMandatoryClaim(s), TokenError::MissingMandatoryClaim(e)) => s == e,
             (TokenError::ClaimDataMisMatchType, TokenError::ClaimDataMisMatchType) => true,
             (_, _) => false,

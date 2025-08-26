@@ -1,8 +1,8 @@
 use super::*;
-use ciborium::Value;
-use coset::{iana, AsCborValue, CoseKey, KeyType, Label, RegisteredLabel};
+use ciborium::{ser, Value};
+use coset::{iana, AsCborValue, CoseKey, KeyType, Label, RegisteredLabel, CoseKeyBuilder};
 use ecdsa::{elliptic_curve::consts::{U32, U48, U66}, signature::Verifier, EncodedPoint};
-use p256::NistP256;
+use p256::{elliptic_curve::sec1::ToEncodedPoint, NistP256};
 use p384::NistP384;
 use p521::NistP521;
 use sha2::{digest::generic_array::GenericArray, Digest, Sha256, Sha384, Sha512};
@@ -94,7 +94,46 @@ impl RustCryptoVerifier
     }
 }
 
-pub(crate) fn cose_key_to_sec1(key: &[u8]) -> Result<Vec<u8>, TokenError>
+pub fn ec_public_key_sec1_to_cose(key: &[u8]) -> Result<Vec<u8>, TokenError>
+{
+    let p256_sec1_len = 1 + 2 * 32;
+    let p384_sec1_len = 1 + 2 * 48;
+    let p521_sec1_len = 1 + 2 * 66;
+
+    let key_cbor_value = match key.len() {
+        n if n == p256_sec1_len => {
+            let pk = p256::PublicKey::from_sec1_bytes(key)?;
+            let ep = pk.to_encoded_point(false);
+            let x = ep.x().unwrap().to_owned().to_vec();
+            let y = ep.y().unwrap().to_owned().to_vec();
+            let key = CoseKeyBuilder::new_ec2_pub_key(iana::EllipticCurve::P_256, x, y).build();
+            key.to_cbor_value()?
+        },
+        n if n == p384_sec1_len => {
+            let pk = p384::PublicKey::from_sec1_bytes(key)?;
+            let ep = pk.to_encoded_point(false);
+            let x = ep.x().unwrap().to_owned().to_vec();
+            let y = ep.y().unwrap().to_owned().to_vec();
+            let key = CoseKeyBuilder::new_ec2_pub_key(iana::EllipticCurve::P_384, x, y).build();
+            key.to_cbor_value()?
+        },
+        n if n == p521_sec1_len => {
+            let pk = p521::PublicKey::from_sec1_bytes(key)?;
+            let ep = pk.to_encoded_point(false);
+            let x = ep.x().unwrap().to_owned().to_vec();
+            let y = ep.y().unwrap().to_owned().to_vec();
+            let key = CoseKeyBuilder::new_ec2_pub_key(iana::EllipticCurve::P_521, x, y).build();
+            key.to_cbor_value()?
+        },
+        _ => return Err(TokenError::InvalidTokenFormat("Wrong sec1 key length")),
+    };
+
+    let mut key_cbor_bytes = Vec::new();
+    ser::into_writer(&key_cbor_value, &mut key_cbor_bytes)?;
+    Ok(key_cbor_bytes)
+}
+
+pub fn ec_public_key_cose_to_sec1(key: &[u8]) -> Result<Vec<u8>, TokenError>
 {
     let val = de::from_reader(key)?;
     let cose_key = CoseKey::from_cbor_value(val)?;

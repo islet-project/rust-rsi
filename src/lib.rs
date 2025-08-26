@@ -16,6 +16,9 @@ pub use ioctl::measurement_read;
 pub use ioctl::sealing_key;
 pub use nix::Error as NixError;
 
+pub use token::crypto::ec_public_key_cose_to_sec1;
+pub use token::crypto::ec_public_key_sec1_to_cose;
+
 pub use token::dumper::print_token;
 pub use token::dumper::print_token_platform;
 pub use token::verifier::verify_token;

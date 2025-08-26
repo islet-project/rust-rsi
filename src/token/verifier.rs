@@ -224,7 +224,7 @@ fn verify_token_realm(buf: &[u8], platform_profile: &str) -> Result<RealmToken, 
         (!profile_claim.present && platform_profile == CCA_PLAT_PROFILE_VALUE_1_0)
     {
         if let Some(pub_key_claim) = token.token_claims.get_mut(&CCA_REALM_PUB_KEY) {
-            let sec1 = crypto::cose_key_to_sec1(pub_key_claim.data.get_bstr())?;
+            let sec1 = crypto::ec_public_key_cose_to_sec1(pub_key_claim.data.get_bstr())?;
             pub_key_claim.data = ClaimData::Bstr(sec1);
         }
     }
