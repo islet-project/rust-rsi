@@ -8,19 +8,19 @@ description = "ioctls and some initial handling of ARM CCA RSI API"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hex = "*"
-nix = { version = "*", features = ["fs", "ioctl"] }
-ciborium = "*"
-coset = "*"
-p256 = "*"
-p384 = "*"
-p521 = "*"
-ecdsa = "*"
-sha2 = "*"
+hex = "0.4"
+nix = { version = "0.31", features = ["fs", "ioctl"] }
+ciborium = "0.2"
+coset = "0.4"
+p256 = "0.13"
+p384 = "0.13"
+p521 = "0.13"
+ecdsa = "0.16"
+sha2 = "0.10"
 
 [build-dependencies]
-cc = "*"
-bindgen = "*"
+cc = "1.2"
+bindgen = "0.72"
 
 [features]
 # this feature is for testing purposes only, DO NOT ENABLE otherwise
