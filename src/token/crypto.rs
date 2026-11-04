@@ -1,11 +1,12 @@
 use super::*;
 use ciborium::{ser, Value};
 use coset::{iana, AsCborValue, CoseKey, KeyType, Label, RegisteredLabel, CoseKeyBuilder};
-use ecdsa::{elliptic_curve::consts::{U32, U48, U66}, signature::Verifier, EncodedPoint};
-use p256::{elliptic_curve::sec1::ToEncodedPoint, NistP256};
+use ecdsa::{elliptic_curve::consts::{U32, U48, U66}, signature::Verifier, Sec1Point};
+use p256::{elliptic_curve::sec1::ToSec1Point, NistP256};
 use p384::NistP384;
 use p521::NistP521;
-use sha2::{digest::generic_array::GenericArray, Digest, Sha256, Sha384, Sha512};
+use ecdsa::elliptic_curve::array::Array;
+use sha2::{Digest, Sha256, Sha384, Sha512};
 
 const IANA_KEY_TYPE_EC2: KeyType = RegisteredLabel::Assigned(iana::KeyType::EC2);
 const IANA_EC2_KEY_PARAM_CRV: i64 = iana::Ec2KeyParameter::Crv as i64;
@@ -103,7 +104,7 @@ pub fn ec_public_key_sec1_to_cose(key: &[u8]) -> Result<Vec<u8>, TokenError>
     let key_cbor_value = match key.len() {
         n if n == p256_sec1_len => {
             let pk = p256::PublicKey::from_sec1_bytes(key)?;
-            let ep = pk.to_encoded_point(false);
+            let ep = pk.to_sec1_point(false);
             let x = ep.x().unwrap().to_owned().to_vec();
             let y = ep.y().unwrap().to_owned().to_vec();
             let key = CoseKeyBuilder::new_ec2_pub_key(iana::EllipticCurve::P_256, x, y).build();
@@ -111,7 +112,7 @@ pub fn ec_public_key_sec1_to_cose(key: &[u8]) -> Result<Vec<u8>, TokenError>
         },
         n if n == p384_sec1_len => {
             let pk = p384::PublicKey::from_sec1_bytes(key)?;
-            let ep = pk.to_encoded_point(false);
+            let ep = pk.to_sec1_point(false);
             let x = ep.x().unwrap().to_owned().to_vec();
             let y = ep.y().unwrap().to_owned().to_vec();
             let key = CoseKeyBuilder::new_ec2_pub_key(iana::EllipticCurve::P_384, x, y).build();
@@ -119,7 +120,7 @@ pub fn ec_public_key_sec1_to_cose(key: &[u8]) -> Result<Vec<u8>, TokenError>
         },
         n if n == p521_sec1_len => {
             let pk = p521::PublicKey::from_sec1_bytes(key)?;
-            let ep = pk.to_encoded_point(false);
+            let ep = pk.to_sec1_point(false);
             let x = ep.x().unwrap().to_owned().to_vec();
             let y = ep.y().unwrap().to_owned().to_vec();
             let key = CoseKeyBuilder::new_ec2_pub_key(iana::EllipticCurve::P_521, x, y).build();
@@ -156,30 +157,27 @@ pub fn ec_public_key_cose_to_sec1(key: &[u8]) -> Result<Vec<u8>, TokenError>
 
     let key = match (alg, x, y) {
         (Some(IANA_EC2_CURVE_P256), Some(x), Some(y)) => {
-            if x.len() != 32 || y.len() != 32 {
-                return Err(TokenError::InvalidTokenFormat("Wrong x/y length of P256 curve"));
-            }
-            let x_array = GenericArray::<_, U32>::from_slice(&x);
-            let y_array = GenericArray::<_, U32>::from_slice(&y);
-            let ep = EncodedPoint::<NistP256>::from_affine_coordinates(x_array, y_array, false);
+            let x_array = Array::<u8, U32>::try_from(&x[..])
+                .map_err(|_| TokenError::InvalidTokenFormat("Wrong x length of P256 curve"))?;
+            let y_array = Array::<u8, U32>::try_from(&y[..])
+                .map_err(|_| TokenError::InvalidTokenFormat("Wrong y length of P256 curve"))?;
+            let ep = Sec1Point::<NistP256>::from_affine_coordinates(&x_array, &y_array, false);
             ep.as_bytes().to_vec()
         },
         (Some(IANA_EC2_CURVE_P384), Some(x), Some(y)) => {
-            if x.len() != 48 || y.len() != 48 {
-                return Err(TokenError::InvalidTokenFormat("Wrong x/y length of P384 curve"));
-            }
-            let x_array = GenericArray::<_, U48>::from_slice(&x);
-            let y_array = GenericArray::<_, U48>::from_slice(&y);
-            let ep = EncodedPoint::<NistP384>::from_affine_coordinates(x_array, y_array, false);
+            let x_array = Array::<u8, U48>::try_from(&x[..])
+                .map_err(|_| TokenError::InvalidTokenFormat("Wrong x length of P384 curve"))?;
+            let y_array = Array::<u8, U48>::try_from(&y[..])
+                .map_err(|_| TokenError::InvalidTokenFormat("Wrong y length of P384 curve"))?;
+            let ep = Sec1Point::<NistP384>::from_affine_coordinates(&x_array, &y_array, false);
             ep.as_bytes().to_vec()
         },
         (Some(IANA_EC2_CURVE_P521), Some(x), Some(y)) => {
-            if x.len() != 66 || y.len() != 66 {
-                return Err(TokenError::InvalidTokenFormat("Wrong x/y length of P521 curve"));
-            }
-            let x_array = GenericArray::<_, U66>::from_slice(&x);
-            let y_array = GenericArray::<_, U66>::from_slice(&y);
-            let ep = EncodedPoint::<NistP521>::from_affine_coordinates(x_array, y_array, false);
+            let x_array = Array::<u8, U66>::try_from(&x[..])
+                .map_err(|_| TokenError::InvalidTokenFormat("Wrong x length of P521 curve"))?;
+            let y_array = Array::<u8, U66>::try_from(&y[..])
+                .map_err(|_| TokenError::InvalidTokenFormat("Wrong y length of P521 curve"))?;
+            let ep = Sec1Point::<NistP521>::from_affine_coordinates(&x_array, &y_array, false);
             ep.as_bytes().to_vec()
         },
         _ => return Err(TokenError::InvalidTokenFormat("Wrong realm public key format")),
